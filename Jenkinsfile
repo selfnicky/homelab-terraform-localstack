@@ -66,7 +66,7 @@ pipeline {
     stage('SonarQube Analysis') {
       steps {
         withSonarQubeEnv('sonarqube') {
-          sh 'sonar-scanner -Dsonar.qualitygate.wait=false'
+          sh 'sonar-scanner -Dsonar.qualitygate.wait=true'
         }
       }
     }
