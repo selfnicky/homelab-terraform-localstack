@@ -11,6 +11,7 @@ pipeline {
     AWS_ACCESS_KEY_ID          = 'test'
     AWS_SECRET_ACCESS_KEY      = 'test'
     AWS_DEFAULT_REGION         = 'us-east-1'
+    AWS_ENDPOINT_URL_S3        = 'http://localstack-main:4566'
   }
 
   stages {
@@ -62,7 +63,7 @@ pipeline {
       }
     }
 
-    stage('Init')     { steps { sh 'terraform init -input=false' } }
+    stage('Init')     { steps { sh 'terraform init -input=false -migrate-state -force-copy' } }
     stage('Validate') { steps { sh 'terraform validate' } }
 
     stage('Plan') {
