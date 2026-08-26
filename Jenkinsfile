@@ -15,6 +15,15 @@ pipeline {
 
   stages {
 
+    // Stale outputs from a previous build are not source code.
+    // Terraform embeds a full config snapshot inside tfplan, which
+    // scanners will happily read as if it were the current code.
+    stage('Prepare') {
+      steps {
+        sh 'rm -f tfplan gitleaks-report.json checkov-report.xml'
+      }
+    }
+
     stage('Secret Scan') {
       steps {
         sh '''
@@ -46,7 +55,9 @@ pipeline {
           trivy config . \
             --format table \
             --exit-code 1 \
-            --severity HIGH,CRITICAL
+            --severity HIGH,CRITICAL \
+            --skip-files "tfplan" \
+            --skip-files "**/tfplan"
         '''
       }
     }
