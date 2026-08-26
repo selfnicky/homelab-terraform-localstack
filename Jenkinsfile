@@ -35,8 +35,7 @@ pipeline {
             --compact \
             --output cli \
             --output junitxml \
-            --output-file-path console,checkov-report.xml \
-            --soft-fail
+            --output-file-path console,checkov-report.xml
         '''
       }
     }
@@ -46,7 +45,7 @@ pipeline {
         sh '''
           trivy config . \
             --format table \
-            --exit-code 0 \
+            --exit-code 1 \
             --severity HIGH,CRITICAL
         '''
       }
@@ -99,6 +98,7 @@ pipeline {
           aws --endpoint-url=$TF_VAR_localstack_endpoint s3 ls
           aws --endpoint-url=$TF_VAR_localstack_endpoint dynamodb list-tables
           aws --endpoint-url=$TF_VAR_localstack_endpoint sqs list-queues
+          aws --endpoint-url=$TF_VAR_localstack_endpoint kms list-aliases
         '''
       }
     }
