@@ -166,17 +166,32 @@ resource "aws_s3_bucket_policy" "logs" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Sid       = "S3ServerAccessLogsPolicy"
-      Effect    = "Allow"
-      Principal = { Service = "logging.s3.amazonaws.com" }
-      Action    = "s3:PutObject"
-      Resource  = "${aws_s3_bucket.logs.arn}/*"
-      Condition = {
-        ArnLike      = { "aws:SourceArn" = aws_s3_bucket.app_data.arn }
-        StringEquals = { "aws:SourceAccount" = data.aws_caller_identity.current.account_id }
-      }
-    }]
+    Statement = [
+      {
+        Sid       = "S3ServerAccessLogsPolicy"
+        Effect    = "Allow"
+        Principal = { Service = "logging.s3.amazonaws.com" }
+        Action    = "s3:PutObject"
+        Resource  = "${aws_s3_bucket.logs.arn}/*"
+        Condition = {
+          ArnLike      = { "aws:SourceArn" = aws_s3_bucket.app_data.arn }
+          StringEquals = { "aws:SourceAccount" = data.aws_caller_identity.current.account_id }
+        }
+      },
+      {
+        Sid       = "DenyInsecureTransport"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          aws_s3_bucket.logs.arn,
+          "${aws_s3_bucket.logs.arn}/*",
+        ]
+        Condition = {
+          Bool = { "aws:SecureTransport" = "false" }
+        }
+      },
+    ]
   })
 
   depends_on = [aws_s3_bucket_public_access_block.logs]
@@ -328,3 +343,28 @@ output "table_name" { value = aws_dynamodb_table.sessions.name }
 output "role_arn" { value = aws_iam_role.app.arn }
 output "queue_url" { value = aws_sqs_queue.jobs.url }
 output "kms_key_arn" { value = aws_kms_key.lab.arn }
+
+
+# Deny any request to app_data that does not arrive over TLS.
+resource "aws_s3_bucket_policy" "app_data" {
+  bucket = aws_s3_bucket.app_data.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "DenyInsecureTransport"
+      Effect    = "Deny"
+      Principal = "*"
+      Action    = "s3:*"
+      Resource = [
+        aws_s3_bucket.app_data.arn,
+        "${aws_s3_bucket.app_data.arn}/*",
+      ]
+      Condition = {
+        Bool = { "aws:SecureTransport" = "false" }
+      }
+    }]
+  })
+
+  depends_on = [aws_s3_bucket_public_access_block.app_data]
+}
