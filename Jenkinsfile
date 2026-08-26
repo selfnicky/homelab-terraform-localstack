@@ -63,6 +63,14 @@ pipeline {
       }
     }
 
+    stage('SonarQube Analysis') {
+      steps {
+        withSonarQubeEnv('sonarqube') {
+          sh 'sonar-scanner -Dsonar.qualitygate.wait=false'
+        }
+      }
+    }
+
     stage('Init')     { steps { sh 'terraform init -input=false' } }
     stage('Validate') { steps { sh 'terraform validate' } }
 
