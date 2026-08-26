@@ -54,13 +54,44 @@ pipeline {
 
     stage('Init')     { steps { sh 'terraform init -input=false' } }
     stage('Validate') { steps { sh 'terraform validate' } }
-    stage('Plan')     { steps { sh 'terraform plan -input=false -out=tfplan' } }
 
-    stage('Approve') {
-      steps { input message: 'Apply this plan to LocalStack?', ok: 'Apply' }
+    stage('Plan') {
+      steps {
+        script {
+          def rc = sh(
+            returnStatus: true,
+            script: 'terraform plan -input=false -detailed-exitcode -out=tfplan'
+          )
+          if (rc == 0) {
+            env.TF_HAS_CHANGES = 'false'
+            echo 'No infrastructure changes. Approve and Apply will be skipped.'
+          } else if (rc == 2) {
+            env.TF_HAS_CHANGES = 'true'
+            echo 'Plan contains changes. Approval required.'
+          } else {
+            error("terraform plan failed with exit code ${rc}")
+          }
+        }
+      }
     }
 
-    stage('Apply')    { steps { sh 'terraform apply -input=false tfplan' } }
+    stage('Approve') {
+      when {
+        beforeInput true
+        environment name: 'TF_HAS_CHANGES', value: 'true'
+      }
+      options { timeout(time: 30, unit: 'MINUTES') }
+      input {
+        message 'Apply this plan to LocalStack?'
+        ok 'Apply'
+      }
+      steps { echo 'Approved by operator.' }
+    }
+
+    stage('Apply') {
+      when { environment name: 'TF_HAS_CHANGES', value: 'true' }
+      steps { sh 'terraform apply -input=false tfplan' }
+    }
 
     stage('Verify') {
       steps {
