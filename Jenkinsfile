@@ -63,7 +63,7 @@ pipeline {
       }
     }
 
-    stage('Init')     { steps { sh 'terraform init -input=false -migrate-state -force-copy' } }
+    stage('Init')     { steps { sh 'terraform init -input=false' } }
     stage('Validate') { steps { sh 'terraform validate' } }
 
     stage('Plan') {
