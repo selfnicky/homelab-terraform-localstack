@@ -7,11 +7,12 @@ pipeline {
   }
 
   environment {
-    TF_VAR_localstack_endpoint = 'http://localstack-main:4566'
+    TF_VAR_localstack_endpoint = 'http://localstack:4566'
+    PG_CONN_STR                = credentials('tfstate-db-conn')
     AWS_ACCESS_KEY_ID          = 'test'
     AWS_SECRET_ACCESS_KEY      = 'test'
     AWS_DEFAULT_REGION         = 'us-east-1'
-    AWS_ENDPOINT_URL_S3        = 'http://localstack-main:4566'
+    AWS_ENDPOINT_URL_S3        = 'http://localstack:4566'
   }
 
   stages {
@@ -71,7 +72,7 @@ pipeline {
       }
     }
 
-    stage('Init')     { steps { sh 'terraform init -input=false' } }
+    stage('Init')     { steps { sh 'terraform init -input=false -reconfigure' } }
     stage('Validate') { steps { sh 'terraform validate' } }
 
     stage('Plan') {
