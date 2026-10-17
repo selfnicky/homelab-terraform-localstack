@@ -6,22 +6,11 @@ terraform {
     }
   }
 
-  # State lives in LocalStack S3 so the MacBook and Jenkins share one
-  # source of truth. The endpoint comes from AWS_ENDPOINT_URL_S3 because
-  # backend blocks cannot use variables.
-  backend "s3" {
-    bucket                      = "homelab-tfstate"
-    key                         = "localstack-demo/terraform.tfstate"
-    region                      = "us-east-1"
-    access_key                  = "test"
-    secret_key                  = "test"
-    use_path_style              = true
-    use_lockfile                = true
-    skip_credentials_validation = true
-    skip_metadata_api_check     = true
-    skip_region_validation      = true
-    skip_requesting_account_id  = true
-  }
+  # Remote state is held in PostgreSQL. The S3 emulator used for the
+  # resources is not durable, so a state bucket and everything in it is
+  # lost whenever that container restarts. Connection string is injected
+  # at init time as PG_CONN_STR.
+  backend "pg" {}
 }
 
 provider "aws" {
